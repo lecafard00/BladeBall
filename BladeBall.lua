@@ -1,57 +1,50 @@
--- Création du menu (GUI)
+-- Charger Infinite Yield
+loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+
+-- Ajouter la commande Blade Ball avec esquive automatique
 local player = game.Players.LocalPlayer
-local screenGui = Instance.new("ScreenGui")
-local frame = Instance.new("Frame")
-local dodgeButton = Instance.new("TextButton")
-
--- Configuration du ScreenGui
-screenGui.Parent = player:WaitForChild("PlayerGui")
-
--- Configuration du Frame (menu)
-frame.Size = UDim2.new(0, 200, 0, 100)
-frame.Position = UDim2.new(0.5, -100, 0.5, -50)
-frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-frame.Parent = screenGui
-
--- Configuration du bouton d'activation d'esquive automatique
-dodgeButton.Size = UDim2.new(1, 0, 1, 0)
-dodgeButton.Position = UDim2.new(0, 0, 0, 0)
-dodgeButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-dodgeButton.Text = "Activer Esquive Auto"
-dodgeButton.Parent = frame
-
--- Variables pour l'état de l'esquive automatique
-local dodgeEnabled = false
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local rootPart = character:WaitForChild("HumanoidRootPart")
+local dodgeKey = Enum.KeyCode.F  -- Touche pour esquiver (F)
+local dodgeEnabled = false  -- Variable pour activer/désactiver l'esquive automatique
 
--- Fonction d'esquive automatique
-local function dodgeAttack()
-    if dodgeEnabled then
-        local dodgeDistance = 50 -- Distance d'esquive
-        local dodgeDirection = Vector3.new(math.random(-1,1), 0, math.random(-1,1)).Unit -- Direction aléatoire
-        local newPosition = rootPart.Position + dodgeDirection * dodgeDistance
-        humanoid:MoveTo(newPosition)
+-- Fonction pour esquiver automatiquement
+local function dodgeBall()
+    local dodgeDistance = 50 -- Distance d'esquive
+    local dodgeDirection = Vector3.new(math.random(-1,1), 0, math.random(-1,1)).Unit -- Direction aléatoire
+    local newPosition = rootPart.Position + dodgeDirection * dodgeDistance
+    humanoid:MoveTo(newPosition)
+end
+
+-- Fonction pour détecter les balles à proximité
+local function detectBall()
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Part") and obj.Name == "Ball" then -- Vérifier que c'est une balle
+            local distance = (obj.Position - rootPart.Position).Magnitude
+            if distance < 30 then -- Si la balle est à moins de 30 studs
+                dodgeBall() -- Esquiver
+            end
+        end
     end
 end
 
--- Activer/Désactiver l'esquive automatique en appuyant sur le bouton
-dodgeButton.MouseButton1Click:Connect(function()
-    dodgeEnabled = not dodgeEnabled
-    if dodgeEnabled then
-        dodgeButton.Text = "Désactiver Esquive Auto"
-        dodgeButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0) -- Changer la couleur en rouge pour indiquer que c'est activé
-    else
-        dodgeButton.Text = "Activer Esquive Auto"
-        dodgeButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- Retour à la couleur verte
+-- Activer l'esquive avec la touche F
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == dodgeKey then
+        dodgeEnabled = not dodgeEnabled
+        if dodgeEnabled then
+            print("Esquive automatique activée")
+        else
+            print("Esquive automatique désactivée")
+        end
     end
 end)
 
--- Boucle pour exécuter l'esquive automatique
+-- Boucle pour vérifier la position des balles en continu
 while true do
     if dodgeEnabled then
-        dodgeAttack() -- Esquive si activé
+        detectBall()
     end
-    wait(2) -- Esquive toutes les 2 secondes
+    wait(0.1) -- Vérification toutes les 0.1 secondes
 end
